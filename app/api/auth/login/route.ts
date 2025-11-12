@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const API_URL = process.env.API_URL || "http://localhost:3001";
-
   try {
+    const body = await request.json();
+    const API_URL = process.env.API_URL || "http://localhost:3001";
+
     const res = await fetch(`${API_URL}/auth/login`, {
       method: "POST",
       headers: {
@@ -13,12 +13,23 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(body),
     });
 
-    const data = await res.json();
+    // Safely read text
+    const text = await res.text();
+
+    // Try parsing to JSON if possible
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      // fallback for non-JSON responses
+      data = { message: text || "Invalid response from backend" };
+    }
+
     return NextResponse.json(data, { status: res.status });
   } catch (error: any) {
     console.error("Login route error:", error);
     return NextResponse.json(
-      { message: "Server error", error: error.message },
+      { message: "Internal Server Error", error: error.message },
       { status: 500 }
     );
   }
